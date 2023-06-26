@@ -29,18 +29,25 @@ class cliente:
             try:
                 print(f"Digite a operacao que deseja realizar [JOIN | SEARCH | DOWNLOAD]:")
                 action = input()
-                #Envia a ação desejada ao servidor
-                peer.send(action.encode())
+
                 #Aciona o método responsável por executar a ação escolhida.
                 if (action.upper() == "JOIN" and join == 0):
-                    join += 1
-                    self.join_actions(peer)
-                elif(action.upper() == "SEARCH"):       
+                    #Envia a ação desejada ao servidor e inicializa o método de ação no cliente.
+                    peer.send(action.encode())
+                    rt = self.join_actions(peer)
+                    #Faz a checagem para garantir que o Join só será realizado uma vez.
+                    if(rt == "JOIN_OK"):
+                        join += 1
+                elif(action.upper() == "SEARCH"):
+                    #Envia a ação desejada ao servidor e inicializa o método de ação no cliente.
+                    peer.send(action.encode())       
                     self.search_actions(peer)
                 elif(action.upper() == 'DOWNLOAD'):
+                    #Envia a ação desejada ao servidor e inicializa o método de ação no cliente.
+                    peer.send(action.encode())
                     self.download_actions(peer)
-                else:
-                    print("Operacao invalida, tente novamente")
+                #else:
+                #    print("Operacao invalida, tente novamente")
 
             except KeyboardInterrupt: 
                 peer.close()
@@ -65,11 +72,10 @@ class cliente:
         peer.send(json_package.encode())
         #Aguarda o retorno do "Join_OK"
         response = peer.recv(1024).decode()
-        #Retorno solicitado e tratamento em caso de erro.
+        #Retorno solicitado.
         if(response.upper() == "JOIN_OK"):
             print(f"Sou peer {self.data['addrs_peer'][0]}:{self.data['addrs_peer'][1]} com arquivos {' '. join(self.data['files'])}")
-        else:
-            print(f"Ocorreu um erro e o peer {self.data['addrs_peer'][0]}:{self.data['addrs_peer'][1]} nao estabeleceu conexao com o servidor")
+            return "JOIN_OK"
 
     def search_actions(self, peer):
         file = input()
@@ -113,6 +119,7 @@ class cliente:
                     print(f"Arquivo {self.search_peers['name']} baixado com sucesso na pasta {os.path.basename(self.data['folder_path'])}")
                     peer.send("UPDATE".encode())
                     peer.send(self.search_peers['name'].encode())
+                    peer.recv(1024).decode()
                     self.data['files'] = self.find_files()
         except KeyError:
             return

@@ -79,6 +79,9 @@ class servidor:
             #Realiza a busca do peer dentre os disponíveis e adiciona na sua lista de arquivos o novo conteúdo.
             if(client['addrs_server'] == addr):
                 client['files'].append(response)
+                break
+        #Resposta ao cliente informando que o Update foi bem sucedido.
+        peer.send("UPDATE_OK".encode())
         
 
 servidor()
