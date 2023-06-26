@@ -131,24 +131,27 @@ class cliente:
         server = socket.socket()
         server.bind((self.data['addrs_peer'][0], self.data['addrs_peer'][1]))
         server.listen()
-
+        
         while True:
-            peer, addr = server.accept()
-            peer.send("Connect_OK".encode())
-            file = peer.recv(1024).decode()
-            if(file in self.data['files']):
-                # Abra o arquivo em modo de leitura binária
-                with open(self.data['folder_path'] + "\\" + file, 'rb') as arquivo:
-                    while True:
-                        # Leia uma parte do arquivo
-                        dados = arquivo.read(1024)
-                        if not dados:
-                            # Todos os dados foram lidos
-                            break
-                        # Envie os dados para o servidor
-                        peer.send(dados)
+            try:
+                peer, addr = server.accept()
+                peer.send("Connect_OK".encode())
+                file = peer.recv(1024).decode()
+                if(file in self.data['files']):
+                    # Abra o arquivo em modo de leitura binária
+                    with open(self.data['folder_path'] + "\\" + file, 'rb') as arquivo:
+                        while True:
+                            # Leia uma parte do arquivo
+                            dados = arquivo.read(1024)
+                            if not dados:
+                                # Todos os dados foram lidos
+                                break
+                            # Envie os dados para o servidor
+                            peer.send(dados)
 
-            peer.close()
+                peer.close()
+            except KeyboardInterrupt:
+                break
         server.close()
 
 cliente()            
