@@ -38,16 +38,14 @@ class cliente:
                     #Faz a checagem para garantir que o Join só será realizado uma vez.
                     if(rt == "JOIN_OK"):
                         join += 1
-                elif(action.upper() == "SEARCH"):
+                elif(action.upper() == "SEARCH" and join > 0):
                     #Envia a ação desejada ao servidor e inicializa o método de ação no cliente.
                     peer.send(action.encode())       
                     self.search_actions(peer)
-                elif(action.upper() == 'DOWNLOAD'):
+                elif(action.upper() == 'DOWNLOAD' and join > 0):
                     #Envia a ação desejada ao servidor e inicializa o método de ação no cliente.
                     peer.send(action.encode())
                     self.download_actions(peer)
-                #else:
-                #    print("Operacao invalida, tente novamente")
 
             except KeyboardInterrupt: 
                 peer.close()
@@ -57,11 +55,15 @@ class cliente:
     def find_files(self):
         folder = self.data['folder_path']
         files = []
-        for name_file in os.listdir(folder):
-            # Verifica se é um arquivo
-            if os.path.isfile(os.path.join(folder, name_file)):
-                # Adiciona à lista de arquivos
-                files.append(name_file)
+        if os.path.exists(folder):
+            for name_file in os.listdir(folder):
+                # Verifica se é um arquivo
+                if os.path.isfile(os.path.join(folder, name_file)):
+                    # Adiciona à lista de arquivos
+                    files.append(name_file)
+        else:
+            #Cria a pasta caso não exista
+            os.mkdir(folder)
         #Retorna uma lista com todos os arquivos.extensões exitentes na pasta do cliente.
         return files   
 
