@@ -112,7 +112,7 @@ class cliente:
                     with open(self.data['folder_path'] + "\\" + self.search_peers['name'], 'wb') as arquivo:
                         while True:
                             # Recebe uma parte do arquivo
-                            dados = s.recv(4096)
+                            dados = s.recv(1024)
                             if not dados:
                                 # Todos os dados foram lidos
                                 break
@@ -141,7 +141,7 @@ class cliente:
                 with open(self.data['folder_path'] + "\\" + file, 'rb') as arquivo:
                     while True:
                         # Leia uma parte do arquivo
-                        dados = arquivo.read(4096)
+                        dados = arquivo.read(1024)
                         if not dados:
                             # Todos os dados foram lidos
                             break
