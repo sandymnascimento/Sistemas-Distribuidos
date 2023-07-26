@@ -24,7 +24,7 @@ class Cliente:
                     for i in range(3):
                         self.servers.append((input(), int(input())))
                         pass
-                else:
+                elif (action.upper() == "PUT" or action.upper() == "GET"):
                     #Cria um socket para conexão com um servidor aleatório
                     peer = socket.socket()
                     server = random.choice(self.servers)                     
@@ -42,8 +42,11 @@ class Cliente:
                 break 
     
     def put_actions(self, peer, server):
+        key = input()
+        value = input()
+        timestamp = self.timestamp(key)
         #Captura do teclado key e value
-        msg = Mensagem("PUT", input(), input()) 
+        msg = Mensagem("PUT", key, value, timestamp) 
         msg.server_addrs = server
 
         #Envia a key e value para o servidor escolhido aleatóriamente.
@@ -54,19 +57,16 @@ class Cliente:
         mensagem = json.loads(response)
 
         if(mensagem['request'] == "PUT_OK"):
-            print(f"PUT_OK key: [{mensagem['key']}] value [{mensagem['value']}] timestamp [{mensagem['timestamp']}] realizada no servidor [{server}]")
+            print(f"PUT_OK key: [{mensagem['key']}] value: [{mensagem['value']}] timestamp: [{mensagem['timestamp']}] realizada no servidor {server}")
             #Aciona a função que armazena a key, value e timestamp no dicionário store
             self.add_store(mensagem)
 
     def get_actions(self, peer, server):
-        timestamp = '0'
         #Captura do teclado key 
         key = input()
         
         #Verifica se a key está armazenada para capturar o timestamp
-        for i in self.store:
-            if(i['key'] == key):
-                timestamp = i['timestamp']
+        timestamp = self.timestamp(key)
 
         #Solicita o GET ao servidor escolhido aleatoriamente.
         msg = Mensagem("GET", key, '', timestamp)
@@ -77,13 +77,13 @@ class Cliente:
         
         #Trata o retorno do servidor a partir do request.
         if(mensagem['request'] == "GET_OK" and mensagem['value']):
-            print(f"GET key: [{mensagem['key']}] value: [{mensagem['value']}] obtido do servidor [{server}], meu timestamp [{timestamp}] e do servidor [{mensagem['timestamp']}]")
+            print(f"GET key: [{mensagem['key']}] value: [{mensagem['value']}] obtido do servidor {server}, meu timestamp [{timestamp}] e do servidor [{mensagem['timestamp']}]")
             mensagem['timestamp'] = datetime.now().isoformat()
             self.add_store(mensagem)
         elif(mensagem['request'] == "TRY_OTHER_SERVER_OR_LATER"):
-            print(f"GET key: [{mensagem['key']}] value: [{mensagem['request']}] obtido do servidor [{server}], meu timestamp [{timestamp}] e do servidor [{mensagem['timestamp']}]")
+            print(f"GET key: [{mensagem['key']}] value: [{mensagem['request']}] obtido do servidor {server}, meu timestamp [{timestamp}] e do servidor [{mensagem['timestamp']}]")
         else:
-            print(f"GET key: [{mensagem['key']}] value: [NULL] obtido do servidor [{server}], meu timestamp [{timestamp}] e do servidor [{mensagem['timestamp']}]")
+            print(f"GET key: [{mensagem['key']}] value: [NULL] obtido do servidor {server}, meu timestamp [{timestamp}] e do servidor [{mensagem['timestamp']}]")
     
     def add_store(self, mensagem):
         #Verifica se a key já está armazenada no store
@@ -99,4 +99,11 @@ class Cliente:
             dict = {"key": mensagem['key'], "value": mensagem['value'], "timestamp": mensagem['timestamp']}
             self.store.append(dict)
 
+    def timestamp(self, key):
+        #Verifica se a key está armazenada para capturar o timestamp
+        for i in self.store:
+            if(i['key'] == key):
+                return i['timestamp']
+        return '0'
+    
 Cliente()

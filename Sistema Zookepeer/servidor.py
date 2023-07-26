@@ -97,7 +97,7 @@ class Servidor:
 
                 elif(action['request'] == "GET"):
                     self.get_actions(action, conn)
-                    
+
                 elif(action['request'] == "REPLICATION_OK"):
                     for addrs in self.replication:
                         if(addrs['addr'] == addr):
@@ -118,11 +118,13 @@ class Servidor:
             check = any(msg['key'] == mensagem['key'] for msg in self.hash_storage)
             mensagem['timestamp'] = datetime.now().isoformat()
             if(check):
-                #Se a key já existir, atualize o value e o timestamp associado.
-                for msg in self.hash_storage:
-                    if(msg['key'] == mensagem['key']):
-                        msg['value'] = mensagem['value']
-                        msg['timestamp'] = mensagem['timestamp']
+                #Só atualiza se o valor for mais recente.
+                if(mensagem['timestamp'] != '0'):
+                    #Se a key já existir, atualize o value e o timestamp associado.
+                    for msg in self.hash_storage:
+                        if(msg['key'] == mensagem['key']):
+                            msg['value'] = mensagem['value']
+                            msg['timestamp'] = mensagem['timestamp']
             else:
                 #Cria dicionario com key e value recebidos, associando um novo timestamp para essa key.
                 dict = {"key": mensagem['key'], "value": mensagem['value'], "timestamp": mensagem['timestamp']}
@@ -151,7 +153,7 @@ class Servidor:
                 if(not any(addrs['ok'] == False for addrs in self.replication)):
                     #Se o put foi solicitado por um cliente, envie para o cliente a mensagem PUT_OK junto com o timestamp associado à key.
                     if(addr == mensagem['client_addrs']):
-                        print(f"Enviando PUT_OK ao Cliente {mensagem['client_addrs']} da key: {mensagem['key']} ts: {mensagem['timestamp']}")
+                        print(f"Enviando PUT_OK ao Cliente {mensagem['client_addrs']} da key: [{mensagem['key']}] ts: [{mensagem['timestamp']}]")
 
                     #Envie para o cliente a mensagem PUT_OK junto com o timestamp associado à key. 
                     conn.send(json.dumps(Mensagem("PUT_OK", mensagem['key'], mensagem['value'], mensagem['timestamp'], mensagem['client_addrs']).__dict__()).encode())
@@ -168,8 +170,8 @@ class Servidor:
         check = any(msg['key'] == mensagem['key'] for msg in self.hash_storage)
         if(not check):
             #Caso a chave não exista, o value devolvido será NULL
-            client.send(json.dumps(Mensagem("GET_OK").__dict__()).encode())
-            print(f"Cliente [{mensagem['client_addrs']}] GET key:[{mensagem['key']}] ts:[{mensagem['timestamp']}]. Nao possuo a key, portanto devolvendo [NULL]")
+            client.send(json.dumps(Mensagem("GET_OK", mensagem['key'],'','0').__dict__()).encode())
+            print(f"Cliente [{mensagem['client_addrs']}] GET key:[{mensagem['key']}] ts:[{mensagem['timestamp']}]. Meu ts é [0], portanto devolvendo [NULL]")
         else:
             i = 0
             #Checa se o timestamp do cliente é mais antigo ou igual ao que a hash_storage possui
@@ -183,7 +185,7 @@ class Servidor:
                 i += 1
             #Se o cliente possuir o value mais atualizado, retornar o erro.
             if(i == len(self.hash_storage)):
-                client.send(json.dumps(Mensagem("TRY_OTHER_SERVER_OR_LATER").__dict__()).encode())
+                client.send(json.dumps(Mensagem("TRY_OTHER_SERVER_OR_LATER", mensagem['key'], '', mensagem['timestamp']).__dict__()).encode())
                 print(f"Cliente [{mensagem['client_addrs']}] GET key:[{mensagem['key']}] ts:[{mensagem['timestamp']}]. Meu ts é [{ts}], portanto devolvendo [TRY_OTHER_SERVER_OR_LATER]")
 
     def servers_connection(self, lider_conn):
@@ -201,7 +203,7 @@ class Servidor:
                             if(msg['key'] == message['key']):
                                 msg['value'] = message['value']
                                 msg['timestamp'] = datetime.now().isoformat()
-                                print(f"REPLICATION key: {msg['key']} value: {msg['value']} ts:{msg['timestamp']}.")
+                                print(f"REPLICATION key: [{msg['key']}] value: [{msg['value']}] ts: [{msg['timestamp']}].")
                     else:
                         #Cria dicionario com key e value recebidos, associando um timestamp para essa key.
                         dict = {"key": message['key'], "value": message['value'], "timestamp": datetime.now().isoformat()}
