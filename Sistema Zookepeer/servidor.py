@@ -125,6 +125,8 @@ class Servidor:
                         if(msg['key'] == mensagem['key']):
                             msg['value'] = mensagem['value']
                             msg['timestamp'] = mensagem['timestamp']
+                else:
+                    conn.send(json.dumps(Mensagem("PUT_ERROR").__dict__()).encode())
             else:
                 #Cria dicionario com key e value recebidos, associando um novo timestamp para essa key.
                 dict = {"key": mensagem['key'], "value": mensagem['value'], "timestamp": mensagem['timestamp']}
@@ -240,6 +242,9 @@ class Servidor:
                                 #Envie para o cliente a mensagem PUT_OK junto com o timestamp associado à key.
                                 message['timestamp'] = msg['timestamp']
                                 client.send(json.dumps(message).encode())
+                    else:
+                        #Envie para o cliente a mensagem "PUT_ERROR".
+                        client.send(json.dumps(message).encode())
   
                 elif(action['request'].upper() == "GET"):
                     #Aciona o método responsável por fazer as ações do get.

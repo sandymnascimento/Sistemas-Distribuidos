@@ -20,11 +20,12 @@ class Cliente:
                 action = input()
 
                 if (i == 0 and action.upper() == "INIT"):
-                    #Ler os servidores do teclado e adicionar a lista, no formato ('ip', port)
+                    #Lê os servidores do teclado e adiciona a lista, no formato ('ip', port)
                     for i in range(3):
                         self.servers.append((input(), int(input())))
                         pass
-                elif (action.upper() == "PUT" or action.upper() == "GET"):
+                    
+                elif (action.upper() == "PUT" or action.upper() == "GET" and i > 0):
                     #Cria um socket para conexão com um servidor aleatório
                     peer = socket.socket()
                     server = random.choice(self.servers)                     
@@ -35,24 +36,26 @@ class Cliente:
                         self.put_actions(peer, server)
                     elif(action.upper() == "GET"):
                         self.get_actions(peer, server)
+                    
+                    #Fecha a conexão com o servidor
                     peer.close()
-
-                
             except KeyboardInterrupt: 
                 break 
     
     def put_actions(self, peer, server):
+        #Captura do teclado key e value, e verifica qual o timestamp.
         key = input()
         value = input()
         timestamp = self.timestamp(key)
-        #Captura do teclado key e value
+        
+        #Cria a Mensagem utilizando a classe.
         msg = Mensagem("PUT", key, value, timestamp) 
         msg.server_addrs = server
 
-        #Envia a key e value para o servidor escolhido aleatóriamente.
+        #Envia a mensagem para o servidor escolhido aleatóriamente.
         peer.send(json.dumps(msg.__dict__()).encode()) 
 
-        #Aguarda o retorno "Put_OK"
+        #Aguarda o retorno "PUT_OK".
         response = peer.recv(1024).decode()
         mensagem = json.loads(response)
 
@@ -62,20 +65,19 @@ class Cliente:
             self.add_store(mensagem)
 
     def get_actions(self, peer, server):
-        #Captura do teclado key 
+        #Captura do teclado key e verifica qual o tyimestamp.
         key = input()
-        
-        #Verifica se a key está armazenada para capturar o timestamp
         timestamp = self.timestamp(key)
 
         #Solicita o GET ao servidor escolhido aleatoriamente.
         msg = Mensagem("GET", key, '', timestamp)
         peer.send(json.dumps(msg.__dict__()).encode())
 
+        #Aguarda o retorno do servidor.
         response = peer.recv(1024).decode()
         mensagem = json.loads(response)
         
-        #Trata o retorno do servidor a partir do request.
+        #Trata o retorno do servidor a partir da informação do request.
         if(mensagem['request'] == "GET_OK" and mensagem['value']):
             print(f"GET key: [{mensagem['key']}] value: [{mensagem['value']}] obtido do servidor {server}, meu timestamp [{timestamp}] e do servidor [{mensagem['timestamp']}]")
             mensagem['timestamp'] = datetime.now().isoformat()
@@ -86,7 +88,7 @@ class Cliente:
             print(f"GET key: [{mensagem['key']}] value: [NULL] obtido do servidor {server}, meu timestamp [{timestamp}] e do servidor [{mensagem['timestamp']}]")
     
     def add_store(self, mensagem):
-        #Verifica se a key já está armazenada no store
+        #Verifica se a key já está armazenada.
         check = any(pairs['key'] == mensagem['key'] for pairs in self.store)
         if(check):
             #Atualiza o value e timestamp da key armazenada com o retorno do servidor.
@@ -100,7 +102,7 @@ class Cliente:
             self.store.append(dict)
 
     def timestamp(self, key):
-        #Verifica se a key está armazenada para capturar o timestamp
+        #Verifica se a key está armazenada para capturar o timestamp.
         for i in self.store:
             if(i['key'] == key):
                 return i['timestamp']
